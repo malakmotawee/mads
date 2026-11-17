@@ -129,6 +129,16 @@ def normalize_url(url: str) -> str:
     return url.strip().rstrip("/").split("#")[0]
 
 
+def as_list(value: Any) -> list:
+    """Coerce an LLM field that should be a list: a list stays, one string becomes [string],
+    anything else (null, number, bool, object) becomes []."""
+    if isinstance(value, list):
+        return value
+    if isinstance(value, str) and value.strip():
+        return [value]
+    return []
+
+
 def ask_json(ctx: RunContext, agent: str, action: str, system: str, user: str, sources: Optional[list[str]] = None) -> dict:
     """Call the LLM for a JSON object, retrying once; log every call."""
     last_err = ""
@@ -218,7 +228,7 @@ def research_step(
         f"PURPOSE: {purpose}\n\nFOUNDER BRIEF:\n{brief_text}\n\n{extra_context}\n\n"
         f"ATTEMPT: {attempt + 1}. Queries already used (do not repeat them): {json.dumps(previous)}",
     )
-    queries = [str(q).strip() for q in plan.get("queries", []) if str(q).strip()][:4]
+    queries = [str(q).strip() for q in as_list(plan.get("queries")) if str(q).strip()][:4]
     if not queries:
         queries = [q for q in fallback_queries(ctx.brief) if q not in previous][:4]
     ctx.results[f"_queries_{agent}"] = StepResult(title="", queries=previous + queries)

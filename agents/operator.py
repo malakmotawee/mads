@@ -5,7 +5,7 @@ rules from the Phase 2 success criteria; it never reports results.
 """
 from __future__ import annotations
 
-from agents.common import RunContext, StepResult, ask_json, guard_fields, load_prompt
+from agents.common import RunContext, StepResult, as_list, ask_json, guard_fields, load_prompt
 
 AGENT = "operator"
 
@@ -21,7 +21,7 @@ def operate(ctx: RunContext, attempt: int) -> StepResult:
         + ("\n".join(f"- {c}" for c in criteria) or "none") + "\n\nGATE OUTCOMES SO FAR:\n" + ("\n".join(gate_lines) or "none")
         + "\n\nLIVE DATA: none connected.",
     )
-    metrics = [str(m).strip() for m in (data.get("metrics_to_track") or []) if str(m).strip()]
+    metrics = [str(m).strip() for m in as_list(data.get("metrics_to_track")) if str(m).strip()]
     texts = {k: str(data.get(k) or "").strip() for k in ("support_plan", "review_cadence", "memo")}
     texts.update({f"metric_{i}": m for i, m in enumerate(metrics)})
     clean, violations = guard_fields(ctx, AGENT, texts)

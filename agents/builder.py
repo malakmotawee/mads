@@ -5,14 +5,14 @@ code, never by the LLM. Shipping the product to a host or store is STUBBED.
 """
 from __future__ import annotations
 
-from agents.common import RunContext, StepResult, ask_json, guard_fields, load_prompt
+from agents.common import RunContext, StepResult, as_list, ask_json, guard_fields, load_prompt
 
 AGENT = "builder"
 
 
 def _components(data: dict) -> list[dict[str, str]]:
     out = []
-    for c in data.get("components") or []:
+    for c in as_list(data.get("components")):
         if isinstance(c, dict) and str(c.get("name") or "").strip():
             out.append({k: " ".join(str(c.get(k) or "").split()) for k in ("name", "purpose", "contents")})
     return out
@@ -20,7 +20,7 @@ def _components(data: dict) -> list[dict[str, str]]:
 
 def _tests(data: dict) -> list[dict[str, str]]:
     out = []
-    for t in data.get("acceptance_tests") or []:
+    for t in as_list(data.get("acceptance_tests")):
         if isinstance(t, dict) and str(t.get("test") or "").strip():
             out.append({"test": " ".join(str(t["test"]).split()), "component": str(t.get("component") or "").strip()})
     return out

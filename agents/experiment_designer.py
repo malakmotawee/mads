@@ -6,7 +6,7 @@ after the founder approves it in approval.py.
 from __future__ import annotations
 
 import guardrails
-from agents.common import RunContext, StepResult, ask_json, guard_fields, load_prompt
+from agents.common import RunContext, StepResult, as_list, ask_json, guard_fields, load_prompt
 from approval import ensure_approved, request_approval
 
 AGENT = "experiment_designer"
@@ -33,7 +33,7 @@ def design_validation_plan(ctx: RunContext, attempt: int) -> StepResult:
     violations = guardrails.check_output(copy, marketing_copy=True)
     copy, _ = guardrails.redact(copy, marketing_copy=True)
     experiment = str(data.get("experiment") or "").strip()
-    criteria = [str(c) for c in data.get("success_criteria", []) if str(c).strip()]
+    criteria = [str(c) for c in as_list(data.get("success_criteria")) if str(c).strip()]
     for v in violations:
         ctx.log.record("guardrails", "redact_marketing_copy", model=None, cost=0, detail=str(v))
     raw_canvas = data.get("lean_canvas") if isinstance(data.get("lean_canvas"), dict) else {}

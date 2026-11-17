@@ -8,7 +8,7 @@ from __future__ import annotations
 import json
 
 import guardrails
-from agents.common import RunContext, StepResult, ask_json, load_prompt
+from agents.common import RunContext, StepResult, as_list, ask_json, load_prompt
 
 AGENT = "problem_analyst"
 
@@ -23,10 +23,10 @@ def define_problem(ctx: RunContext, attempt: int) -> StepResult:
         f"FOUNDER BRIEF:\n{ctx.brief.as_text()}\n\nEVIDENCE CLAIMS FROM STEP 1:\n{listing}\n\nATTEMPT: {attempt + 1}",
         sources=evidence.sources if evidence else [],
     )
-    ids = [str(i).strip() for i in data.get("supporting_claim_ids", []) if str(i).strip() in by_id]
+    ids = [str(i).strip() for i in as_list(data.get("supporting_claim_ids")) if str(i).strip() in by_id]
     supporting = [by_id[i] for i in dict.fromkeys(ids)]
     sourced_support = [c for c in supporting if c.sourced]
-    assumptions = [str(a).strip() for a in data.get("assumptions", []) if str(a).strip()]
+    assumptions = [str(a).strip() for a in as_list(data.get("assumptions")) if str(a).strip()]
     statement, hits1 = guardrails.redact(str(data.get("problem_statement") or "").strip())
     customer, hits2 = guardrails.redact(str(data.get("target_customer") or "").strip())
 
@@ -39,7 +39,7 @@ def define_problem(ctx: RunContext, attempt: int) -> StepResult:
     body += ["", "### Open assumptions (each labelled ASSUMPTION)"]
     body += [f"- ASSUMPTION: {a}" for a in assumptions] or ["- _(none listed)_"]
     notes = []
-    if len(ids) < len(data.get("supporting_claim_ids", []) or []):
+    if len(ids) < len(as_list(data.get("supporting_claim_ids"))):
         notes.append("some cited claim IDs did not exist in step 1 and were ignored")
     if hits1 or hits2:
         notes.append("guardrails removed text from the problem statement")

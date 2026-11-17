@@ -8,7 +8,7 @@ from __future__ import annotations
 import re
 
 import guardrails
-from agents.common import RunContext, StepResult, ask_json, guard_fields, keep_known_urls, load_prompt
+from agents.common import RunContext, StepResult, as_list, ask_json, guard_fields, keep_known_urls, load_prompt
 from approval import ensure_approved, request_approval
 
 AGENT = "commercial"
@@ -71,7 +71,7 @@ def listing(ctx: RunContext, attempt: int) -> StepResult:
         f"PRODUCT: {mvp.summary if mvp else ctx.brief.title}\nCOMPONENTS: {', '.join(components) or 'none'}\n"
         f"PRICE: {price:.2f} USD one-time\nTARGET CUSTOMER: {ctx.brief.sections.get('Target customer', '')}",
     )
-    posts = [str(p).strip() for p in (data.get("launch_posts") or []) if str(p).strip()]
+    posts = [str(p).strip() for p in as_list(data.get("launch_posts")) if str(p).strip()]
     raw = {"store_page": str(data.get("store_page") or "").strip(), **{f"post_{i}": p for i, p in enumerate(posts)}}
     violations = sum(len(guardrails.check_output(t, marketing_copy=True)) for t in raw.values())
     clean, _ = guard_fields(ctx, AGENT, raw, marketing_copy=True)
