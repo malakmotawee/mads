@@ -100,7 +100,7 @@ Without Docker: `pip install -r requirements.txt`, then `python orchestrator.py 
 
 ## Cost per run
 
-About $0.00 per run: the free OpenRouter tier or a local model, plus free search. Measured on real runs with `nvidia/nemotron-3-ultra-550b-a55b:free`: a good-brief run that stopped at step 1.2 used 8,126 tokens over 12 log entries, and one that halted at step 1.1 used 2,855 tokens over 8 entries; both cost $0.00. A run makes about 6–16 LLM calls, depending on how many steps it reaches and whether a step repeats: a weak idea that stops in Phase 1 or 2 uses the fewest. Each LLM entry in `decision_log.json` records the run's real `tokens` and `cost`. For a paid model, set `LLM_USD_PER_1M_TOKENS` and the cost is computed.
+About $0.00 per run: the free OpenRouter tier or a local model, plus free search. The committed demo run (weak brief, STOP at step 2.1, `nvidia/nemotron-3.5-super-vl:free`) used 50,309 tokens over 24 log entries and cost $0.00. Earlier real runs with `nvidia/nemotron-3-ultra-550b-a55b:free`: a good-brief run that stopped at step 1.2 used 8,126 tokens over 12 log entries, and one that halted at step 1.1 used 2,855 tokens over 8 entries; both cost $0.00. A run makes about 6–16 LLM calls, depending on how many steps it reaches and whether a step repeats: a weak idea that stops in Phase 1 or 2 uses the fewest. Each LLM entry in `decision_log.json` records the run's real `tokens` and `cost`. For a paid model, set `LLM_USD_PER_1M_TOKENS` and the cost is computed.
 
 ## Demo video
 
