@@ -26,7 +26,9 @@ def design_validation_plan(ctx: RunContext, attempt: int) -> StepResult:
     data = ask_json(
         ctx, AGENT, "draft_validation_plan", load_prompt("experiment_designer"),
         f"FOUNDER BRIEF:\n{ctx.brief.as_text()}\n\nPROBLEM:\n{problem.summary if problem else ''}\n\n"
-        f"DEMAND SUMMARY:\n{demand.summary if demand else ''}",
+        f"DEMAND SUMMARY:\n{demand.summary if demand else ''}\n\n"
+        "OPEN ASSUMPTIONS FROM PHASE 1 (hypotheses; the smoke test should check the riskiest ones):\n"
+        + ("\n".join(f"- {a}" for a in (problem.data.get("assumptions", []) if problem else [])) or "none"),
         sources=(demand.sources if demand else []),
     )
     copy = str(data.get("landing_page_copy") or "").strip()

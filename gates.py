@@ -33,7 +33,10 @@ THRESHOLDS = _freeze(
         },
         "phase1_step2_problem": {
             "min_supporting_sourced_claims": 3,
-            "max_open_assumptions": 4,
+            # Open assumptions are not penalised by count (that would reward hiding them);
+            # they go to Phase 2 as hypotheses. The statement fails only if it rests on
+            # more assumptions than sourced claims. Changed 2026-11-17, see ARCHITECTURE.md.
+            "max_assumptions_per_sourced_claim": 1.0,
         },
         "phase2_step1_competitors": {
             "min_sourced_claims": 5,
@@ -143,7 +146,8 @@ def evaluate(step_key: str, metrics: Mapping[str, Any], attempt: int = 0) -> Gat
         s, a = m.get("supporting_sourced_claims", 0), m.get("open_assumptions", 99)
         ok = all([
             check("support", s >= t["min_supporting_sourced_claims"], f"problem statement backed by {s} sourced claims >= {t['min_supporting_sourced_claims']}"),
-            check("assumptions", a <= t["max_open_assumptions"], f"open assumptions {a} <= {t['max_open_assumptions']}"),
+            check("assumptions", a <= s * t["max_assumptions_per_sourced_claim"],
+                  f"open assumptions {a} <= {t['max_assumptions_per_sourced_claim']} x sourced support {s}"),
         ])
         outcome = GO if ok else _weak(reasons, attempt)
 

@@ -89,13 +89,15 @@ Thresholds live in `gates.THRESHOLDS`. They are fixed before any run and are rea
 |---|---|---|---|---|
 | Brief screen | no guardrail hit | — | — | excluded product or conduct rule hit |
 | 1.1 Opportunities | ≥6 sourced claims, ≥3 domains, ≥3 pain signals, assumption ratio ≤0.4 | evidence too thin, first attempt | volume met but only 1–2 pain signals | volume met with 0 pain signals; or still thin after the repeat |
-| 1.2 Problem | statement backed by ≥3 sourced claims, ≤4 open assumptions | not met, first attempt | — | still not met after the repeat |
+| 1.2 Problem | statement backed by ≥3 sourced claims, and no more open assumptions than sourced supporting claims | not met, first attempt | — | still not met after the repeat |
 | 2.1 Competitors | ≥5 sourced claims, ≥3 domains, ≥1 sourced paid price point | not met, first attempt | — | ≥5 sourced free alternatives and 0 paid price points (saturated); or still thin after the repeat |
 | 2.2 Demand | ≥3 sourced willingness-to-pay signals from ≥3 domains, and more positive than negative | not met, first attempt | — | ≥2 negative signals and ≥2× as many negative as positive; or still thin after the repeat |
 | 2.3 Validation plan | 0 guardrail violations and founder approved | rejected or violation, first attempt | — | still rejected / violating after the repeat |
 | 3.1 Build | MVP drafted, 0 guardrail violations, every acceptance check passes | not met, first attempt | — | still not met after the repeat |
 | 4.1, 5.1, 6.1 (drafting) | artifact produced, 0 guardrail violations, plus founder approval where the step publishes | not met, first attempt | — | still not met after the repeat; or a guardrail-breaking store page |
 | 5.2, 5.3 (MOCKED) | artifact produced, plus founder approval for the checkout | not met, first attempt | — | still not met after the repeat |
+
+**Threshold change log.** On 2026-11-17, after a real run, the step 1.2 rule changed from "at most 4 open assumptions" to "no more open assumptions than sourced supporting claims". The good-idea brief had stopped with 7 sourced supporting claims because the model listed 5–6 assumptions. A cap on the count rewards hiding assumptions, and testing them is Phase 2's job: they now go to step 2.3 as hypotheses for the smoke test. No other threshold changed. The demo outputs of both sample briefs come from runs under the new rule.
 
 ```mermaid
 stateDiagram-v2

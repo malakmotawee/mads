@@ -63,3 +63,16 @@ def test_build_gate_needs_passing_acceptance_checks():
 def test_drafting_gate_stops_on_guardrail_violations():
     m = {"artifact_produced": True, "guardrail_violations": 1}
     assert gates.evaluate("phase4_step1_offer", m, attempt=gates.MAX_REPEATS).outcome == gates.STOP
+
+
+def test_problem_gate_does_not_punish_listing_assumptions():
+    m = {"supporting_sourced_claims": 7, "open_assumptions": 6}
+    assert gates.evaluate("phase1_step2_problem", m).outcome == gates.GO
+
+
+def test_problem_gate_fails_when_assumptions_outnumber_evidence():
+    m = {"supporting_sourced_claims": 3, "open_assumptions": 5}
+    assert gates.evaluate("phase1_step2_problem", m).outcome == gates.REPEAT
+    assert gates.evaluate("phase1_step2_problem", m, attempt=gates.MAX_REPEATS).outcome == gates.STOP
+    assert gates.evaluate("phase1_step2_problem", {"supporting_sourced_claims": 2, "open_assumptions": 0},
+                          attempt=gates.MAX_REPEATS).outcome == gates.STOP
