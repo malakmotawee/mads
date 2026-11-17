@@ -45,7 +45,10 @@ def run_checks(components: list[dict[str, str]], guide: str, tests: list[dict[st
 def product_spec(ctx: RunContext, attempt: int) -> StepResult:
     problem = ctx.results.get("phase1_step2_problem")
     plan = ctx.results.get("phase2_step3_validation_plan")
-    extra = "\n\nThe previous draft failed its acceptance checks; fix every failed check." if attempt else ""
+    prev = ctx.results.get("phase3_step1_product_spec") if attempt else None
+    failed_before = prev.data.get("failed", []) if prev else []
+    extra = ("\n\nThe previous draft failed these acceptance checks; fix every one:\n"
+             + "\n".join(f"- {f}" for f in failed_before)) if failed_before else ""
     data = ask_json(
         ctx, AGENT, "draft_mvp", load_prompt("builder"),
         f"FOUNDER BRIEF:\n{ctx.brief.as_text()}\n\nPROBLEM:\n{problem.summary if problem else ''}\n\n"
@@ -77,7 +80,7 @@ def product_spec(ctx: RunContext, attempt: int) -> StepResult:
         title="MVP draft and user guide",
         summary=f"{clean['product_name']}: {clean['format']}",
         body="\n".join(body),
-        data={"product_name": clean["product_name"], "components": [c["name"] for c in components]},
+        data={"product_name": clean["product_name"], "components": [c["name"] for c in components], "failed": failed},
         metrics={"artifact_produced": bool(components), "failed_checks": len(failed), "guardrail_violations": violations},
         labels=["shipping STUBBED"],
     )
