@@ -2,7 +2,7 @@
 
 ## Overview
 
-`orchestrator.py` loads a founder brief (YAML or Markdown), screens it with `guardrails.py`, and then runs eleven steps across six phases. After every step, `gates.py` turns metrics computed in code into **go / repeat / pivot / stop**, and the run halts at the first gate that is not GO. Phases 1 and 2 are real agents: an OpenAI-compatible LLM (OpenRouter `openai/gpt-oss-120b:free`, or local Ollama `gpt-oss:20b`) plus free web search through `ddgs`. Phases 3–6 are **STUBBED**, and payments and delivery are **MOCKED**. Every outward-facing action goes through `approval.py`. Every agent action is appended to `decision_log.json`, and every step and gate is written to `outputs/`.
+`orchestrator.py` loads a founder brief (YAML or Markdown), screens it with `guardrails.py`, and then runs eleven steps across six phases. After every step, `gates.py` turns metrics computed in code into **go / repeat / pivot / stop**, and the run halts at the first gate that is not GO. Every phase has a real agent on an OpenAI-compatible LLM (OpenRouter `openai/gpt-oss-120b:free`, or local Ollama `gpt-oss:20b`); Phases 1 and 2 also use free web search through `ddgs`. Publishing is **STUBBED**, and payments and delivery are **MOCKED**, with no payment provider or sandbox of any kind. Every outward-facing action goes through `approval.py`. Every agent action is appended to `decision_log.json`, and every step and gate is written to `outputs/`.
 
 ```mermaid
 flowchart TD
@@ -19,15 +19,19 @@ flowchart TD
     G22 -- go --> P23[2.3 Validation plan<br/>experiment_designer]
     P23 --> A1[[founder approval:<br/>publish smoke test]]
     A1 --> G23{gate}
-    G23 -- go --> P3[3 Build STUBBED]
-    P3 --> P4[4 Offer + listing STUBBED<br/>approval to publish]
-    P4 --> P5[5 Checkout + delivery MOCKED<br/>approval to publish]
-    P5 --> P6[6 Operate STUBBED]
+    G23 -- go --> P3[3.1 Build: MVP draft<br/>builder]
+    P3 --> T3{gate: acceptance<br/>checks pass?}
+    T3 -- go --> P4[4.1 Price + draft policies<br/>commercial]
+    P4 --> G4{gate}
+    G4 -- go --> P51[5.1 Store page + posts<br/>approval to publish, STUBBED]
+    P51 --> P52[5.2 Checkout MOCKED<br/>approval]
+    P52 --> P53[5.3 Delivery MOCKED]
+    P53 --> P6[6.1 Operate: metrics,<br/>support, pivot memo]
     G11 & G12 & G21 & G22 & G23 -- repeat --> R[re-run step once<br/>with new queries]
     G11 & G12 & G21 & G22 & G23 -- pivot / stop --> H[halt + recommendation]
 ```
 
-Every gate (including the stub gates after steps 3–6) writes `outputs/phase<N>_gate_<name>.md` and a `gate` entry in `decision_log.json`.
+Every gate (including the drafting and MOCKED gates after steps 3–6) writes `outputs/phase<N>_gate_<name>.md` and a `gate` entry in `decision_log.json`.
 
 ## Phases
 
@@ -53,20 +57,29 @@ Every gate (including the stub gates after steps 3–6) writes `outputs/phase<N>
 - *Output:* `outputs/phase2_step2_demand.md`.
 
 **Step 2.3, Validation plan.** Agent: `agents/experiment_designer.py`.
-- *Method:* the LLM drafts landing-page copy, an experiment and success criteria fixed before the test runs. The copy is screened with the stricter marketing rules: no testimonials, ratings, user counts, scarcity or income claims. Clean copy is shown to the founder with `approval.request_approval`. Only after `approve` does `publish_landing_page` run, and it is **STUBBED** (nothing goes online).
+- *Method:* the LLM drafts a **Lean Canvas** (nine blocks, every one labelled an ASSUMPTION until tested), landing-page copy, an experiment and success criteria fixed before the test runs. The copy is screened with the stricter marketing rules: no testimonials, ratings, user counts, scarcity or income claims. Clean copy is shown to the founder with `approval.request_approval`. Only after `approve` does `publish_landing_page` run, and it is **STUBBED** (nothing goes online).
 - *Output:* `outputs/phase2_step3_validation_plan.md`.
 
-### Phase 3: Build (STUBBED)
-`agents/builder.py` restates the validated problem and plan as a spec outline. It calls no LLM and builds nothing. Output: `phase3_step1_product_spec.md`.
+### Phase 3: Build (Working; shipping STUBBED)
+**Step 3.1, Build the product.** Agent: `agents/builder.py`, prompt `prompts/builder.md`.
+- *Method:* the LLM drafts the minimum digital product for the validated problem: a name, a format, 3–6 components with their full contents and the part of the problem each solves, a quick-start user guide, and acceptance tests a buyer can run. All text goes through the guardrails.
+- *Tests:* `builder.run_checks` then tests the draft in code: at least 3 components, every component has contents and a purpose, the user guide names every component, at least 3 acceptance tests, and every test targets a component that exists. The gate is a **passing-tests gate**: any failed check gives REPEAT (the agent is told which checks failed), then STOP.
+- *Output:* `outputs/phase3_step1_product_spec.md` (the MVP content, user guide, tests and check results). Uploading it to a host or store is **STUBBED**.
 
-### Phase 4: Commercial setup (STUBBED)
-`agents/commercial.py`. Step 4.1 restates the founder's price and the sourced competitor prices. Step 4.2 puts a listing in front of the founder, and `publish_listing` (STUBBED) runs only after approval.
+### Phase 4: Commercial setup (Working; no payments of any kind)
+**Step 4.1, Set the price and policies.** Agent: `agents/commercial.py`, prompt `prompts/commercial.md`.
+- *Method:* the LLM proposes one price from the MVP, the founder's budget and the **sourced** competitor prices from step 2.1. Any URL in its reasoning that the search did not return is replaced with `ASSUMPTION`, and with no sourced prices the whole rationale is labelled `ASSUMPTION`. It drafts terms of sale, a privacy policy and a refund policy, each marked as a draft for founder review and not legal advice.
+- *Output:* `outputs/phase4_step1_offer.md`. No payment, sandbox or account is created.
 
-### Phase 5: Sell, deliver, get paid (MOCKED)
-`agents/seller.py`. Step 5.1 creates a **MOCKED** checkout through `payments.MockPaymentProvider.create_checkout`, which requires an approval for `publish_checkout:<product>`. Step 5.2 confirms that delivery is wired to payment webhooks. The pipeline never simulates sales. The full mocked flow runs in `payment_test.py` (see Sale to cash).
+### Phase 5: Launch: sell, deliver, get paid (drafting Working; publishing STUBBED; payments MOCKED)
+**Step 5.1, Open the store.** `agents/commercial.listing`, prompt `prompts/listing.md`, drafts the store page (only components that exist, the step 4.1 price, how delivery works) and two launch posts for the founder to share under their own name. The stricter marketing rules apply: any testimonial, rating, user count, urgency or income claim means the copy is never offered for approval and the gate stops. Clean copy goes to the founder, and `publish_listing` (**STUBBED**) runs only after `approve`.
 
-### Phase 6: Operate and learn (STUBBED)
-`agents/operator.py` describes the planned review loop (reconcile weekly, compare results with the Phase 2 success criteria, feed them back into the gates). No live data is connected.
+**Step 5.2, Checkout.** `agents/seller.py` creates a **MOCKED** checkout through `payments.MockPaymentProvider.create_checkout` at the step 4.1 price, which requires an approval for `publish_checkout:<product>`.
+
+**Step 5.3, Deliver automatically.** Confirms that delivery is wired to payment webhooks. The pipeline never simulates sales; the full mocked flow runs in `payment_test.py` (see Sale to cash).
+
+### Phase 6: Operate and learn (Working; live data STUBBED)
+**Step 6.1.** `agents/operator.py`, prompt `prompts/operator.md`. The LLM receives the Phase 2 success criteria and every gate outcome of the run, and drafts the metrics to track, a support plan, a review cadence and a persevere-or-pivot memo that sets decision rules from the fixed criteria. No live data is connected, the output says so, and the memo reports no results.
 
 ## Gates
 
@@ -80,7 +93,9 @@ Thresholds live in `gates.THRESHOLDS`. They are fixed before any run and are rea
 | 2.1 Competitors | ≥5 sourced claims, ≥3 domains, ≥1 sourced paid price point | not met, first attempt | — | ≥5 sourced free alternatives and 0 paid price points (saturated); or still thin after the repeat |
 | 2.2 Demand | ≥3 sourced willingness-to-pay signals from ≥3 domains, and more positive than negative | not met, first attempt | — | ≥2 negative signals and ≥2× as many negative as positive; or still thin after the repeat |
 | 2.3 Validation plan | 0 guardrail violations and founder approved | rejected or violation, first attempt | — | still rejected / violating after the repeat |
-| 3.1–6.1 (stubs) | artifact produced, plus founder approval where the step publishes | not met, first attempt | — | still not met after the repeat |
+| 3.1 Build | MVP drafted, 0 guardrail violations, every acceptance check passes | not met, first attempt | — | still not met after the repeat |
+| 4.1, 5.1, 6.1 (drafting) | artifact produced, 0 guardrail violations, plus founder approval where the step publishes | not met, first attempt | — | still not met after the repeat; or a guardrail-breaking store page |
+| 5.2, 5.3 (MOCKED) | artifact produced, plus founder approval for the checkout | not met, first attempt | — | still not met after the repeat |
 
 ```mermaid
 stateDiagram-v2
@@ -154,17 +169,18 @@ Each `decision_log.json` entry has `timestamp`, `agent`, `action`, `sources`, `m
 |---|---|
 | Brief loader (YAML/Markdown), config, LLM client with Ollama fallback and auto-pull | Built |
 | Web search (ddgs), claim validation, metrics | Built |
-| Phase 1 and Phase 2 agents and prompts | Built |
+| Agents and prompts for all six phases | Built |
+| Phase 3 acceptance checks (in code) | Built |
 | Gates with fixed thresholds | Built |
 | Founder approval (CLI), guardrails, decision log | Built |
-| Landing page, listing publishing | STUBBED |
-| Phase 3 build, Phase 4 offer, Phase 6 operate | STUBBED |
+| Publishing the landing page, store page and posts; shipping the MVP | STUBBED |
+| Live sales and usage data for Phase 6 | STUBBED |
 | Payments, delivery, refunds, payouts, reconciliation | MOCKED |
 
 ## Roadmap
 
-1. Phase 3: draft the product (for example, a template kit) with the LLM, with founder review before anything is shared.
-2. Replace `MockPaymentProvider` with a test-mode provider behind the same interface, keeping founder approval for checkout and refunds.
+1. Phase 3: export the drafted MVP straight into the target format (for example a Notion template file), still with founder review before anything is shared.
+2. Keep payments MOCKED inside this system. A founder who wants to sell connects their own store account outside it; the system never holds, moves or refunds money.
 3. More evidence sources (marketplace listings, trend data), with the same "URL must be retrieved" rule.
 4. A small web UI for approvals as well as the CLI.
 5. Calibrate gate thresholds against past runs, and publish the changes in `gates.py` with their reasons.

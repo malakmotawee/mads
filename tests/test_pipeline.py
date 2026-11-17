@@ -79,7 +79,37 @@ def test_full_run_with_founder_approvals(tmp_path):
     published = [e for e in log if e["action"] in ("publish_landing_page", "publish_listing", "create_checkout")]
     assert len(published) == 3 and all(e["approved_by"] == "founder" for e in published)
     assert "STUBBED" in (out / "phase3_step1_product_spec.md").read_text()
-    assert "MOCKED" in (out / "phase5_step1_checkout.md").read_text()
+    assert "MOCKED" in (out / "phase5_step2_checkout.md").read_text()
+    assert "Lean Canvas" in (out / "phase2_step3_validation_plan.md").read_text()
+    spec = (out / "phase3_step1_product_spec.md").read_text()
+    assert "PASS every acceptance test targets an existing component" in spec and "FAIL" not in spec
+    offer = (out / "phase4_step1_offer.md").read_text()
+    assert "invented.example" not in offer and "ASSUMPTION" in offer and "Not legal advice" in offer
+    assert "Persevere-or-pivot memo" in (out / "phase6_step1_operate.md").read_text()
+
+
+def test_mvp_failing_acceptance_checks_stops_at_build(tmp_path):
+    class BrokenGuide(FakeLLM):
+        def complete(self, system, user):
+            res = super().complete(system, user)
+            if "Builder" in system.splitlines()[0]:
+                res.text = res.text.replace("Duplicate the kit, then open", "Read the docs")
+                res.text = res.text.replace("Event planner, Budget tracker, Sponsor outreach", "")
+            return res
+    res, out, _ = run(tmp_path, STRONG, answer="approve", llm=BrokenGuide(STRONG))
+    assert res["halted_at"] == "phase3_step1_product_spec" and res["final_outcome"] == gates.STOP
+    assert "FAIL user guide mentions every component" in (out / "phase3_step1_product_spec.md").read_text()
+
+
+def test_store_page_with_fake_reviews_is_never_offered_for_publishing(tmp_path):
+    asked = []
+    llm = FakeLLM(STRONG, store_page="Rated 5 stars by 2,000 clubs! Only 3 left, buy today.")
+    out, logp = tmp_path / "o", tmp_path / "l.json"
+    res = run_pipeline("briefs/good_idea.yaml", llm=llm, search=FakeSearch(), out_dir=str(out), log_path=str(logp),
+                       approval_input=lambda p: asked.append(p) or "approve", echo=lambda *_: None)
+    assert res["halted_at"] == "phase5_step1_listing" and res["final_outcome"] == gates.STOP
+    log = json.loads(logp.read_text())
+    assert not any("publish_listing" in e["action"] for e in log)
 
 
 def test_guardrail_brief_stops_before_any_agent(tmp_path):

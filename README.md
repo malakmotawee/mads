@@ -1,6 +1,6 @@
 # mads: an open-source agent team from founder idea to validated digital product
 
-A Python CLI that runs a founder's idea through six phases (Discover, Validate, Build, Commercial setup, Sell/deliver/get paid, Operate and learn) with an evidence gate after every step. Discover and Validate work for real, using free web search and a free or local open-weight model. Every market claim cites a URL the search actually returned, or is labelled `ASSUMPTION`. Phases 3–6 are **STUBBED**; payments and delivery are **MOCKED**. Nothing is published, sent or spent without the founder typing `approve`.
+A Python CLI that runs a founder's idea through six phases (Discover, Validate, Build, Commercial setup, Sell/deliver/get paid, Operate and learn) with an evidence gate after every step. Every phase does real work with a free open-weight model: Discover and Validate use free web search; Build drafts the MVP and tests it in code; Commercial setup drafts the price and policies; Launch drafts the store page and posts; Operate drafts the support plan and a persevere-or-pivot memo. Every market claim cites a URL the search actually returned, or is labelled `ASSUMPTION`. Publishing is **STUBBED**; payments and delivery are **MOCKED**, with no payment provider or sandbox of any kind. Nothing is published, sent or spent without the founder typing `approve`.
 
 ## Quickstart
 
@@ -66,17 +66,18 @@ Without Docker: `pip install -r requirements.txt`, then `python orchestrator.py 
 | 1.2 Problem (`agents/problem_analyst.py`) | Problem statement built only from step 1.1 claims, with open assumptions listed | **Working** |
 | 2.1 Competitors (`agents/competitor_analyst.py`) | Paid competitors, free alternatives and sourced price points | **Working** |
 | 2.2 Demand (`agents/demand_validator.py`) | Evidence for and against willingness to pay | **Working** |
-| 2.3 Validation plan (`agents/experiment_designer.py`) | Smoke-test copy and success criteria (working); publishing the page | Drafting **Working**, publishing **STUBBED** |
+| 2.3 Validation plan (`agents/experiment_designer.py`) | Lean Canvas, smoke-test copy and success criteria fixed in advance; publishing the page | Drafting **Working**, publishing **STUBBED** |
 | Gates (`gates.py`) | go / repeat / pivot / stop with thresholds fixed in advance | **Working** |
 | Founder approval (`approval.py`) | CLI approve/reject before anything is published, sent or spent | **Working** |
 | Decision log (`decision_log.py`) | One entry per agent action in `decision_log.json` | **Working** |
-| 3.1 Product spec (`agents/builder.py`) | Outline only; builds nothing | **STUBBED** |
-| 4.1 Offer, 4.2 Listing (`agents/commercial.py`) | Offer outline; listing "published" only after approval, nowhere real | **STUBBED** |
-| 5.1 Checkout (`payments.py`, `agents/seller.py`) | Mock checkout created after approval; no payment provider | **MOCKED** |
-| 5.2 Delivery (`delivery.py`) | Access granted on a payment webhook, idempotent, revoked on refund | **MOCKED** |
+| 3.1 Build (`agents/builder.py`) | Drafts the MVP content and user guide; code runs acceptance checks and the gate needs them all to pass | Drafting and tests **Working**, shipping **STUBBED** |
+| 4.1 Price and policies (`agents/commercial.py`) | Price from sourced competitor prices (unsourced reasoning labelled `ASSUMPTION`); draft terms, privacy and refund policies, marked as drafts and not legal advice | **Working** |
+| 5.1 Store page and launch posts (`agents/commercial.py`) | Drafted, screened by guardrails, "published" only after approval, nowhere real | Drafting **Working**, publishing **STUBBED** |
+| 5.2 Checkout (`payments.py`, `agents/seller.py`) | Mock checkout created after approval; no payment provider or sandbox | **MOCKED** |
+| 5.3 Delivery (`delivery.py`) | Access granted on a payment webhook, idempotent, revoked on refund | **MOCKED** |
 | Refunds (`refunds.py`) | Only with founder approval; revokes access | **MOCKED** |
 | Reconciliation (`reconcile.py`) | Matches orders, payments, fees, refunds and payouts | **MOCKED** |
-| 6.1 Operate and learn (`agents/operator.py`) | Planned review loop; no live data | **STUBBED** |
+| 6.1 Operate and learn (`agents/operator.py`) | Metrics, support plan and a persevere-or-pivot memo from the Phase 2 criteria; no live data is connected | Drafting **Working**, live data **STUBBED** |
 
 ## Architecture
 
@@ -88,14 +89,14 @@ Without Docker: `pip install -r requirements.txt`, then `python orchestrator.py 
 - **Fallback, no key needed:** `gpt-oss:20b` via Ollama, run locally by `docker-compose.yml`. It needs about 16 GB of RAM; a GPU is optional.
 - **Other free open-weight models:** set `LLM_MODEL` to another OpenRouter id ending in `:free` (for example a Qwen model), or `OLLAMA_MODEL` to a smaller local model such as `qwen3:8b` for machines with less RAM.
 - **Free only, enforced in code:** `config.py` refuses any OpenRouter model whose id does not end in `:free`, unless `ALLOW_PAID_MODEL=true` and a price in `LLM_USD_PER_1M_TOKENS` are both set, so a run can't be billed by accident.
-- **Free-tier limits:** OpenRouter caps free models at 20 requests per minute and 50 requests per day on an account that has bought no credits. One run uses about 6–12 requests.
+- **Free-tier limits:** OpenRouter caps free models at 20 requests per minute and 50 requests per day on an account that has bought no credits. One run uses about 6–16 requests.
 - **Any OpenAI-compatible endpoint:** set `LLM_BASE_URL`, `LLM_API_KEY` and `LLM_MODEL` in `.env`.
 - **Web search:** the `ddgs` library (DuckDuckGo and other public engines). No key, no cost.
 - No paid service is required at any step.
 
 ## Cost per run
 
-About $0.00 per run: the free OpenRouter tier or a local model, plus free search. A run makes about 6–12 LLM calls, depending on how many steps it reaches and whether a step repeats. Each LLM entry in `decision_log.json` records the run's real `tokens` and `cost`. For a paid model, set `LLM_USD_PER_1M_TOKENS` and the cost is computed.
+About $0.00 per run: the free OpenRouter tier or a local model, plus free search. A run makes about 6–16 LLM calls, depending on how many steps it reaches and whether a step repeats: a weak idea that stops in Phase 1 or 2 uses the fewest. Each LLM entry in `decision_log.json` records the run's real `tokens` and `cost`. For a paid model, set `LLM_USD_PER_1M_TOKENS` and the cost is computed.
 
 ## Demo video
 

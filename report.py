@@ -54,7 +54,7 @@ def render_step(phase: int, step: int, name: str, attempts: list[StepResult], ru
 def render_gate(name: str, decisions: list[GateDecision], run_meta: dict) -> str:
     final = decisions[-1]
     out = [f"# Gate: {final.step_key}", "",
-           f"**Outcome: {final.outcome.upper()}**" + (" (STUBBED step)" if final.stubbed else ""), "",
+           f"**Outcome: {final.outcome.upper()}**" + (" (MOCKED step)" if final.stubbed else ""), "",
            final.recommendation, "",
            f"Run {run_meta['run_id']}. Thresholds are fixed in `gates.py` before the run.", ""]
     for d in decisions:

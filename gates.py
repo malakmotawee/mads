@@ -55,15 +55,19 @@ THRESHOLDS = _freeze(
     }
 )
 
-# Steps in phases 3-6 are STUBBED or MOCKED: their gate checks only that the
-# step produced its artifact and, where the step publishes, that the founder approved.
-STUB_STEPS = (
+# Drafting steps in phases 3-6 use the LLM but evaluate no market evidence. Their gate
+# checks that the artifact exists, that it broke no guardrail, that its code-level
+# acceptance checks passed (Phase 3) and, where the step publishes, that the founder approved.
+DRAFT_STEPS = (
     "phase3_step1_product_spec",
     "phase4_step1_offer",
-    "phase4_step2_listing",
-    "phase5_step1_checkout",
-    "phase5_step2_delivery",
+    "phase5_step1_listing",
     "phase6_step1_operate",
+)
+# MOCKED steps: same checks, labelled as MOCKED.
+STUB_STEPS = (
+    "phase5_step2_checkout",
+    "phase5_step3_delivery",
 )
 
 
@@ -99,7 +103,7 @@ def _weak(reasons: list[str], attempt: int) -> str:
 
 def evaluate(step_key: str, metrics: Mapping[str, Any], attempt: int = 0) -> GateDecision:
     m = dict(metrics)
-    if step_key in STUB_STEPS:
+    if step_key in STUB_STEPS or step_key in DRAFT_STEPS:
         return _stub_gate(step_key, m, attempt)
     if step_key not in THRESHOLDS:
         raise KeyError(f"no gate defined for {step_key}")
@@ -188,12 +192,22 @@ def evaluate(step_key: str, metrics: Mapping[str, Any], attempt: int = 0) -> Gat
 
 
 def _stub_gate(step_key: str, m: dict[str, Any], attempt: int) -> GateDecision:
-    reasons = ["STUBBED/MOCKED step: no market evidence is evaluated here"]
+    stubbed = step_key in STUB_STEPS
+    reasons = ["MOCKED step: no market evidence is evaluated here" if stubbed
+               else "drafting step: checks the artifact, guardrails, tests and approval; no market evidence is evaluated here"]
     if not m.get("artifact_produced"):
         reasons.append("FAIL step produced no artifact")
-        return GateDecision(step_key, _weak(reasons, attempt), reasons, m, {}, attempt, stubbed=True)
+        return GateDecision(step_key, _weak(reasons, attempt), reasons, m, {}, attempt, stubbed=stubbed)
+    if m.get("guardrail_violations", 0):
+        reasons.append(f"FAIL draft broke {m['guardrail_violations']} guardrail rule(s)")
+        return GateDecision(step_key, _weak(reasons, attempt), reasons, m, {}, attempt, stubbed=stubbed)
+    if m.get("failed_checks", 0):
+        reasons.append(f"FAIL {m['failed_checks']} acceptance check(s) failed")
+        return GateDecision(step_key, _weak(reasons, attempt), reasons, m, {}, attempt, stubbed=stubbed)
+    if "failed_checks" in m:
+        reasons.append("PASS all acceptance checks")
     if m.get("needs_approval") and not m.get("founder_approved"):
         reasons.append("FAIL founder did not approve; nothing was published")
-        return GateDecision(step_key, _weak(reasons, attempt), reasons, m, {}, attempt, stubbed=True)
+        return GateDecision(step_key, _weak(reasons, attempt), reasons, m, {}, attempt, stubbed=stubbed)
     reasons.append("PASS artifact produced" + (" and founder approved" if m.get("needs_approval") else ""))
-    return GateDecision(step_key, GO, reasons, m, {}, attempt, stubbed=True)
+    return GateDecision(step_key, GO, reasons, m, {}, attempt, stubbed=stubbed)

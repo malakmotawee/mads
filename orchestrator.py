@@ -53,9 +53,9 @@ STEPS: tuple[Step, ...] = (
     Step(2, 3, "validation_plan", experiment_designer.AGENT, experiment_designer.design_validation_plan),
     Step(3, 1, "product_spec", builder.AGENT, builder.product_spec),
     Step(4, 1, "offer", commercial.AGENT, commercial.offer),
-    Step(4, 2, "listing", commercial.AGENT, commercial.listing),
-    Step(5, 1, "checkout", seller.AGENT, seller.checkout),
-    Step(5, 2, "delivery", seller.AGENT, seller.delivery),
+    Step(5, 1, "listing", commercial.AGENT, commercial.listing),
+    Step(5, 2, "checkout", seller.AGENT, seller.checkout),
+    Step(5, 3, "delivery", seller.AGENT, seller.delivery),
     Step(6, 1, "operate", operator.AGENT, operator.operate),
 )
 
@@ -107,6 +107,8 @@ def run_pipeline(
                 attempt += 1
                 continue
             break
+        history = ctx.results.setdefault("_gate_history", StepResult(title="", data={"lines": []}))
+        history.data["lines"].append(f"{step.key}: {decisions[-1].outcome.upper()}")
         files.append(report.write_step(out_dir, step.phase, step.step, step.name, attempts, meta))
         files.append(report.write_gate(out_dir, step.phase, step.name, decisions, meta))
         if decisions[-1].outcome != gates.GO:

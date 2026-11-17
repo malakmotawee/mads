@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import re
 import os
 from dataclasses import dataclass, field
 from typing import Any, Callable, Optional
@@ -252,3 +253,23 @@ def research_step(
     metrics = claim_metrics(claims)
     metrics["search_results"] = len(unique)
     return StepResult(title=title, summary=summary, claims=claims, queries=queries, metrics=metrics, notes=notes)
+
+
+_URL_RE = re.compile(r"https?://[^\s)\]>\"']+")
+
+
+def keep_known_urls(text: str, known_urls: set[str]) -> str:
+    """Replace any URL that did not come back from the web search with ASSUMPTION."""
+    known = {normalize_url(u) for u in known_urls}
+    return _URL_RE.sub(lambda m: m.group(0) if normalize_url(m.group(0).rstrip(".,;")) in known else ASSUMPTION, text)
+
+
+def guard_fields(ctx: RunContext, agent: str, fields: dict[str, str], *, marketing_copy: bool = False) -> tuple[dict[str, str], int]:
+    """Redact every field that breaks a conduct rule, log each violation, return (clean_fields, count)."""
+    clean, count = {}, 0
+    for name, text in fields.items():
+        clean[name], hits = guardrails.redact(text, marketing_copy=marketing_copy)
+        for v in hits:
+            count += 1
+            ctx.log.record("guardrails", f"redact:{agent}:{name}", model=None, cost=0, detail=str(v))
+    return clean, count

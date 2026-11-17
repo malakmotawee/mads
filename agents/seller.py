@@ -17,6 +17,9 @@ AGENT = "seller"
 
 
 def _price(ctx: RunContext) -> float:
+    offer = ctx.results.get("phase4_step1_offer")
+    if offer and offer.data.get("price_usd"):
+        return float(offer.data["price_usd"])
     m = re.search(r"\d+(\.\d+)?", ctx.brief.sections.get("Price idea", ""))
     return float(m.group(0)) if m else 0.0
 

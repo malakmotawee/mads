@@ -23,8 +23,10 @@ class FakeLLM:
     (type, url_or_None) tuples; None means 'cite the first search result URL n'."""
     model_name = "fake-model"
 
-    def __init__(self, claims_by_agent=None, landing_copy="Plan your week. Join the waitlist."):
+    def __init__(self, claims_by_agent=None, landing_copy="Plan your week. Join the waitlist.",
+                 store_page="# Club ops kit\nPlan events and budgets. 9 USD. Download link after payment."):
         self.claims_by_agent = claims_by_agent or {}
+        self.store_page = store_page
         self.landing_copy = landing_copy
         self.calls = 0
 
@@ -43,6 +45,22 @@ class FakeLLM:
         elif "Experiment designer" in head:
             data = {"landing_page_copy": self.landing_copy, "experiment": "Waitlist for 14 days.",
                     "success_criteria": ["30 sign-ups from 500 visitors"]}
+        elif "Builder" in head:
+            names = ["Event planner", "Budget tracker", "Sponsor outreach"]
+            data = {"product_name": "Club ops kit", "format": "Notion template",
+                    "components": [{"name": n, "purpose": "saves planning time", "contents": f"{n} database with fields and views"}
+                                   for n in names],
+                    "user_guide": "Duplicate the kit, then open " + ", ".join(names) + ".",
+                    "acceptance_tests": [{"test": f"Add one entry to {n}", "component": n} for n in names]}
+        elif "Commercial" in head:
+            data = {"price_usd": 9, "pricing_rationale": "Below the sourced competitor price; see https://invented.example/x.",
+                    "terms_of_sale": "Personal or club use.", "privacy_policy": "Email only, for delivery.",
+                    "refund_policy": "14 days; access is removed after a refund."}
+        elif "Listing" in head:
+            data = {"store_page": self.store_page, "launch_posts": ["New kit for club leaders, built by a club leader."]}
+        elif "Operator" in head:
+            data = {"metrics_to_track": ["waitlist sign-ups"], "support_plan": "Email within 48 hours.",
+                    "review_cadence": "Every 2 weeks.", "memo": "Persevere only if the Phase 2 criteria are met."}
         else:
             key = next(k for k in ("Researcher", "Competitor", "Demand") if k in head)
             urls = self._urls(user)

@@ -47,5 +47,19 @@ def test_validation_plan_needs_founder_approval():
 
 def test_stub_gate_requires_approval_when_publishing():
     m = {"artifact_produced": True, "needs_approval": True, "founder_approved": False}
-    d = gates.evaluate("phase4_step2_listing", m, attempt=gates.MAX_REPEATS)
+    d = gates.evaluate("phase5_step2_checkout", m, attempt=gates.MAX_REPEATS)
     assert d.outcome == gates.STOP and d.stubbed
+    d = gates.evaluate("phase5_step1_listing", m, attempt=gates.MAX_REPEATS)
+    assert d.outcome == gates.STOP and not d.stubbed
+
+
+def test_build_gate_needs_passing_acceptance_checks():
+    m = {"artifact_produced": True, "failed_checks": 2, "guardrail_violations": 0}
+    assert gates.evaluate("phase3_step1_product_spec", m).outcome == gates.REPEAT
+    assert gates.evaluate("phase3_step1_product_spec", m, attempt=gates.MAX_REPEATS).outcome == gates.STOP
+    assert gates.evaluate("phase3_step1_product_spec", {**m, "failed_checks": 0}).outcome == gates.GO
+
+
+def test_drafting_gate_stops_on_guardrail_violations():
+    m = {"artifact_produced": True, "guardrail_violations": 1}
+    assert gates.evaluate("phase4_step1_offer", m, attempt=gates.MAX_REPEATS).outcome == gates.STOP
