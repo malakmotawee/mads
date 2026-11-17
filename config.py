@@ -36,7 +36,17 @@ class LLMConfig:
 
     @property
     def is_free(self) -> bool:
-        return self.provider == "ollama" or self.model.endswith(":free") or self.usd_per_1m_tokens == 0
+        # OpenRouter bills every model whose id lacks the ":free" suffix, so a zero
+        # price setting must not make a paid OpenRouter model count as free.
+        if self.provider == "ollama":
+            return True
+        if self.provider == "openrouter":
+            return self.model.endswith(":free")
+        return self.usd_per_1m_tokens == 0  # custom endpoint (e.g. a local server)
+
+
+class PaidModelError(ValueError):
+    """Raised when the configuration would send requests to a billed model."""
 
 
 @dataclass(frozen=True)
@@ -73,7 +83,7 @@ def load_llm_config(env: Optional[Mapping[str, str]] = None) -> LLMConfig:
         return ollama
     base_url = _get(env, "LLM_BASE_URL", DEFAULT_LLM_BASE_URL)
     fallback_on = _get(env, "LLM_FALLBACK_TO_OLLAMA", "true").lower() not in ("0", "false", "no")
-    return LLMConfig(
+    cfg = LLMConfig(
         provider="openrouter" if "openrouter.ai" in base_url else "custom",
         base_url=base_url,
         api_key=key.strip(),
@@ -81,6 +91,23 @@ def load_llm_config(env: Optional[Mapping[str, str]] = None) -> LLMConfig:
         usd_per_1m_tokens=float(_get(env, "LLM_USD_PER_1M_TOKENS", "0")),
         fallback=ollama if fallback_on else None,
     )
+    _check_free(cfg, env)
+    return cfg
+
+
+def _check_free(cfg: LLMConfig, env: Mapping[str, str]) -> None:
+    """Refuse a billed OpenRouter model unless ALLOW_PAID_MODEL=true and a price is set."""
+    if cfg.provider != "openrouter" or cfg.is_free:
+        return
+    if _get(env, "ALLOW_PAID_MODEL", "false").lower() not in ("1", "true", "yes"):
+        raise PaidModelError(
+            f"LLM_MODEL={cfg.model} is a paid OpenRouter model. Use a model id ending in "
+            "':free' (default: openai/gpt-oss-120b:free), or set ALLOW_PAID_MODEL=true."
+        )
+    if cfg.usd_per_1m_tokens <= 0:
+        raise PaidModelError(
+            "ALLOW_PAID_MODEL=true needs LLM_USD_PER_1M_TOKENS > 0 so decision_log.json reports the real cost."
+        )
 
 
 def load_config(env: Optional[Mapping[str, str]] = None) -> AppConfig:

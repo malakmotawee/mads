@@ -21,6 +21,14 @@ cp .env.example .env
 
 Open `.env` and set `LLM_API_KEY=` to your key. Leave `LLM_MODEL=openai/gpt-oss-120b:free`. `.env` is listed in `.gitignore`, so the key is never committed. Then run `docker compose up` again. If OpenRouter fails (a rate limit or a bad key), the app falls back to local Ollama.
 
+**Run with no local model at all.** Also set `LLM_FALLBACK_TO_OLLAMA=false` in `.env`, and start only the app container, so Ollama is never started and no model is downloaded:
+
+```bash
+docker compose run --rm --no-deps app
+```
+
+A run then fails with an error instead of falling back if OpenRouter refuses a request.
+
 **Approve steps as the founder.** `docker compose up` has no interactive terminal, so every approval is **rejected** automatically and nothing is published. To approve or reject at the prompt, run the app interactively:
 
 ```bash
@@ -78,6 +86,9 @@ Without Docker: `pip install -r requirements.txt`, then `python orchestrator.py 
 
 - **Default:** `openai/gpt-oss-120b:free` on OpenRouter, an open-weight model on a free tier. It needs a free key in `.env`.
 - **Fallback, no key needed:** `gpt-oss:20b` via Ollama, run locally by `docker-compose.yml`. It needs about 16 GB of RAM; a GPU is optional.
+- **Other free open-weight models:** set `LLM_MODEL` to another OpenRouter id ending in `:free` (for example a Qwen model), or `OLLAMA_MODEL` to a smaller local model such as `qwen3:8b` for machines with less RAM.
+- **Free only, enforced in code:** `config.py` refuses any OpenRouter model whose id does not end in `:free`, unless `ALLOW_PAID_MODEL=true` and a price in `LLM_USD_PER_1M_TOKENS` are both set, so a run can't be billed by accident.
+- **Free-tier limits:** OpenRouter caps free models at 20 requests per minute and 50 requests per day on an account that has bought no credits. One run uses about 6–12 requests.
 - **Any OpenAI-compatible endpoint:** set `LLM_BASE_URL`, `LLM_API_KEY` and `LLM_MODEL` in `.env`.
 - **Web search:** the `ddgs` library (DuckDuckGo and other public engines). No key, no cost.
 - No paid service is required at any step.

@@ -23,7 +23,7 @@ import report
 from agents import builder, commercial, competitor_analyst, demand_validator, experiment_designer, operator, problem_analyst, researcher, seller
 from agents.common import RunContext, StepResult, load_brief
 from approval import InputFn
-from config import load_config
+from config import PaidModelError, load_config
 from decision_log import DecisionLog
 from llm import LLMClient
 from search import WebSearch
@@ -125,7 +125,10 @@ def main(argv: Optional[list[str]] = None) -> int:
     args = p.parse_args(argv)
     if not os.path.isfile(args.brief):
         p.error(f"brief file not found: {args.brief}")
-    cfg = load_config()
+    try:
+        cfg = load_config()
+    except PaidModelError as exc:
+        p.error(str(exc))
     if not sys.stdin.isatty():
         print("No interactive terminal: every founder approval will be REJECTED. "
               "Use `docker compose run --rm app` to approve steps.", file=sys.stderr)
