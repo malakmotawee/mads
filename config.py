@@ -2,7 +2,7 @@
 
 LLM selection:
 1. If LLM_API_KEY is set, use the OpenAI-compatible endpoint at LLM_BASE_URL
-   (default: OpenRouter) with LLM_MODEL (default: openai/gpt-oss-120b:free).
+   (default: OpenRouter) with LLM_MODEL (default: nvidia/nemotron-3-ultra-550b-a55b:free).
 2. If no key is set, use the local Ollama server (OLLAMA_BASE_URL) with
    OLLAMA_MODEL (default: gpt-oss:20b). docker-compose.yml runs it as a service.
 """
@@ -18,7 +18,7 @@ except ImportError:  # python-dotenv is optional at import time
     load_dotenv = None
 
 DEFAULT_LLM_BASE_URL = "https://openrouter.ai/api/v1"
-DEFAULT_LLM_MODEL = "openai/gpt-oss-120b:free"
+DEFAULT_LLM_MODEL = "nvidia/nemotron-3-ultra-550b-a55b:free"
 DEFAULT_OLLAMA_BASE_URL = "http://localhost:11434/v1"
 DEFAULT_OLLAMA_MODEL = "gpt-oss:20b"
 
@@ -102,7 +102,7 @@ def _check_free(cfg: LLMConfig, env: Mapping[str, str]) -> None:
     if _get(env, "ALLOW_PAID_MODEL", "false").lower() not in ("1", "true", "yes"):
         raise PaidModelError(
             f"LLM_MODEL={cfg.model} is a paid OpenRouter model. Use a model id ending in "
-            "':free' (default: openai/gpt-oss-120b:free), or set ALLOW_PAID_MODEL=true."
+            "':free' (default: nvidia/nemotron-3-ultra-550b-a55b:free), or set ALLOW_PAID_MODEL=true."
         )
     if cfg.usd_per_1m_tokens <= 0:
         raise PaidModelError(

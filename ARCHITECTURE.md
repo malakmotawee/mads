@@ -2,7 +2,7 @@
 
 ## Overview
 
-`orchestrator.py` loads a founder brief (YAML or Markdown), screens it with `guardrails.py`, and then runs eleven steps across six phases. After every step, `gates.py` turns metrics computed in code into **go / repeat / pivot / stop**, and the run halts at the first gate that is not GO. Every phase has a real agent on an OpenAI-compatible LLM (OpenRouter `openai/gpt-oss-120b:free`, or local Ollama `gpt-oss:20b`); Phases 1 and 2 also use free web search through `ddgs`. Publishing is **STUBBED**, and payments and delivery are **MOCKED**, with no payment provider or sandbox of any kind. Every outward-facing action goes through `approval.py`. Every agent action is appended to `decision_log.json`, and every step and gate is written to `outputs/`.
+`orchestrator.py` loads a founder brief (YAML or Markdown), screens it with `guardrails.py`, and then runs eleven steps across six phases. After every step, `gates.py` turns metrics computed in code into **go / repeat / pivot / stop**, and the run halts at the first gate that is not GO. Every phase has a real agent on an OpenAI-compatible LLM (OpenRouter `nvidia/nemotron-3-ultra-550b-a55b:free`, or local Ollama `gpt-oss:20b`); Phases 1 and 2 also use free web search through `ddgs`. Publishing is **STUBBED**, and payments and delivery are **MOCKED**, with no payment provider or sandbox of any kind. Every outward-facing action goes through `approval.py`. Every agent action is appended to `decision_log.json`, and every step and gate is written to `outputs/`.
 
 ```mermaid
 flowchart TD
