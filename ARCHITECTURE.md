@@ -97,7 +97,9 @@ Thresholds live in `gates.THRESHOLDS`. They are fixed before any run and are rea
 | 4.1, 5.1, 6.1 (drafting) | artifact produced, 0 guardrail violations, plus founder approval where the step publishes | not met, first attempt | — | still not met after the repeat; or a guardrail-breaking store page |
 | 5.2, 5.3 (MOCKED) | artifact produced, plus founder approval for the checkout | not met, first attempt | — | still not met after the repeat |
 
-**Threshold change log.** On 2026-11-17, after a real run, the step 1.2 rule changed from "at most 4 open assumptions" to "no more open assumptions than sourced supporting claims". The good-idea brief had stopped with 7 sourced supporting claims because the model listed 5–6 assumptions. A cap on the count rewards hiding assumptions, and testing them is Phase 2's job: they now go to step 2.3 as hypotheses for the smoke test. No other threshold changed. The demo outputs of both sample briefs come from runs under the new rule.
+**Search outages are not verdicts.** If more than half of an evidence step's searches return nothing (the free search service is down or rate-limiting), its gate judges nothing: it repeats the step, and if search is still unavailable it halts with "search unavailable: re-run later", never PIVOT or a STOP on the idea. The search client also retries with growing pauses (`search.py`).
+
+**Threshold change log.** On 2026-11-17, after a real run, the step 1.2 rule changed from "at most 4 open assumptions" to "no more open assumptions than sourced supporting claims". The good-idea brief had stopped with 7 sourced supporting claims because the model listed 5–6 assumptions. A cap on the count rewards hiding assumptions, and testing them is Phase 2's job: they now go to step 2.3 as hypotheses for the smoke test. No evidence threshold changed besides this one; the same day, the search-outage rule above was added after a run where 3 of 4 searches failed. The demo outputs of both sample briefs come from runs under the new rule.
 
 ```mermaid
 stateDiagram-v2

@@ -125,3 +125,17 @@ def test_good_brief_runs_end_to_end_with_approvals(tmp_path):
     res, out, _ = run(tmp_path, STRONG, answer="approve", brief="briefs/good_idea.yaml")
     assert res["final_outcome"] == gates.GO
     assert "Outcome: GO" in (out / "phase6_gate_operate.md").read_text()
+
+
+class DownSearch(FakeSearch):
+    def search(self, query):
+        self.calls.append(query)
+        return []
+
+
+def test_search_outage_halts_without_judging_the_idea(tmp_path):
+    out, logp = tmp_path / "o", tmp_path / "l.json"
+    res = run_pipeline("briefs/good_idea.yaml", llm=FakeLLM(STRONG), search=DownSearch(), out_dir=str(out),
+                       log_path=str(logp), approval_input=lambda _: "reject", echo=lambda *_: None)
+    assert res["halted_at"] == "phase1_step1_opportunities"
+    assert "Search was unavailable" in (out / "phase1_gate_opportunities.md").read_text()

@@ -104,8 +104,23 @@ def _weak(reasons: list[str], attempt: int) -> str:
     return STOP
 
 
+# Evidence steps whose searches mostly came back empty are not judged at all: an
+# outage of the free search service is not a verdict on the idea.
+MAX_EMPTY_QUERY_SHARE = 0.5
+SEARCH_UNAVAILABLE = ("Search was unavailable (most queries returned nothing), so this gate made no judgement "
+                      "on the idea. Re-run later; this is neither GO nor a verdict against the idea.")
+
+
 def evaluate(step_key: str, metrics: Mapping[str, Any], attempt: int = 0) -> GateDecision:
     m = dict(metrics)
+    q, empty = m.get("queries", 0), m.get("empty_queries", 0)
+    if step_key in THRESHOLDS and q and empty / q > MAX_EMPTY_QUERY_SHARE:
+        reasons = [f"FAIL search coverage: {empty} of {q} queries returned no results (max share {MAX_EMPTY_QUERY_SHARE})"]
+        if attempt < MAX_REPEATS:
+            return GateDecision(step_key, REPEAT, reasons, m, dict(THRESHOLDS[step_key]), attempt)
+        reasons.append("halted: search still unavailable after the repeat")
+        return GateDecision(step_key, STOP, reasons, m, dict(THRESHOLDS[step_key]), attempt,
+                            recommendation=SEARCH_UNAVAILABLE)
     if step_key in STUB_STEPS or step_key in DRAFT_STEPS:
         return _stub_gate(step_key, m, attempt)
     if step_key not in THRESHOLDS:

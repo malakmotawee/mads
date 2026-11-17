@@ -15,14 +15,14 @@ class SearchResult:
 
 
 class WebSearch:
-    def __init__(self, max_results: int = 8, pause_seconds: float = 1.5):
+    def __init__(self, max_results: int = 8, pause_seconds: float = 3.0):
         self.max_results = max_results
         self.pause_seconds = pause_seconds
 
     def search(self, query: str) -> list[SearchResult]:
         from ddgs import DDGS
 
-        for attempt in range(2):
+        for attempt in range(3):
             try:
                 rows = DDGS().text(query, max_results=self.max_results)
                 time.sleep(self.pause_seconds)
@@ -38,5 +38,5 @@ class WebSearch:
                 ]
             except Exception as exc:  # ddgs raises several exception types
                 print(f"[search] '{query}' failed (attempt {attempt + 1}): {exc}", file=sys.stderr)
-                time.sleep(self.pause_seconds * 3)
+                time.sleep(self.pause_seconds * 4 * (attempt + 1))  # back off: search engines rate-limit bursts
         return []

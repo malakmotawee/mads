@@ -119,5 +119,5 @@ def load_config(env: Optional[Mapping[str, str]] = None) -> AppConfig:
         outputs_dir=_get(env, "OUTPUTS_DIR", "outputs"),
         decision_log_path=_get(env, "DECISION_LOG_PATH", "decision_log.json"),
         search_max_results=int(_get(env, "SEARCH_MAX_RESULTS", "8")),
-        search_pause_seconds=float(_get(env, "SEARCH_PAUSE_SECONDS", "1.5")),
+        search_pause_seconds=float(_get(env, "SEARCH_PAUSE_SECONDS", "3")),
     )

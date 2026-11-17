@@ -234,8 +234,10 @@ def research_step(
     ctx.results[f"_queries_{agent}"] = StepResult(title="", queries=previous + queries)
 
     results: list[SearchResult] = []
+    empty_queries = 0
     for q in queries:
         rows = ctx.search.search(q)
+        empty_queries += 0 if rows else 1
         ctx.log.record(agent, "web_search", sources=[r.url for r in rows], model=None, cost=0, query=q, results=len(rows))
         results.extend(rows)
     seen, unique = set(), []
@@ -262,6 +264,11 @@ def research_step(
         notes.append("web search returned no results; every claim is an ASSUMPTION")
     metrics = claim_metrics(claims)
     metrics["search_results"] = len(unique)
+    metrics["queries"] = len(queries)
+    metrics["empty_queries"] = empty_queries
+    if queries and empty_queries / len(queries) > 0.5:
+        notes.append(f"{empty_queries} of {len(queries)} searches returned nothing (search service unavailable or "
+                     "rate-limited): the evidence is incomplete")
     return StepResult(title=title, summary=summary, claims=claims, queries=queries, metrics=metrics, notes=notes)
 
 

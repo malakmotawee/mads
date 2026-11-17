@@ -76,3 +76,15 @@ def test_problem_gate_fails_when_assumptions_outnumber_evidence():
     assert gates.evaluate("phase1_step2_problem", m, attempt=gates.MAX_REPEATS).outcome == gates.STOP
     assert gates.evaluate("phase1_step2_problem", {"supporting_sourced_claims": 2, "open_assumptions": 0},
                           attempt=gates.MAX_REPEATS).outcome == gates.STOP
+
+
+def test_search_outage_is_not_a_verdict():
+    m = {"queries": 4, "empty_queries": 3, "sourced_claims": 8, "distinct_domains": 4, "pain": 1, "assumption_ratio": 0.1}
+    assert gates.evaluate("phase1_step1_opportunities", m).outcome == gates.REPEAT
+    d = gates.evaluate("phase1_step1_opportunities", m, attempt=gates.MAX_REPEATS)
+    assert d.outcome == gates.STOP and d.recommendation == gates.SEARCH_UNAVAILABLE
+
+
+def test_half_the_searches_empty_is_still_judged():
+    m = {"queries": 4, "empty_queries": 2, "sourced_claims": 8, "distinct_domains": 4, "pain": 4, "assumption_ratio": 0.1}
+    assert gates.evaluate("phase1_step1_opportunities", m).outcome == gates.GO
