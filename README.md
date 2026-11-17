@@ -2,6 +2,8 @@
 
 A Python CLI that runs a founder's idea through six phases (Discover, Validate, Build, Commercial setup, Sell/deliver/get paid, Operate and learn) with an evidence gate after every step. Every phase does real work with a free open-weight model: Discover and Validate use free web search; Build drafts the MVP and tests it in code; Commercial setup drafts the price and policies; Launch drafts the store page and posts; Operate drafts the support plan and a persevere-or-pivot memo. Every market claim cites a URL the search actually returned, or is labelled `ASSUMPTION`. Publishing is **STUBBED**; payments and delivery are **MOCKED**, with no payment provider or sandbox of any kind. Nothing is published, sent or spent without the founder typing `approve`.
 
+The gates are built so the system can't flatter an idea. Thresholds are fixed in `gates.py` before any run, and metrics are computed in code from validated claims, never by the model. A weak idea gets a recommendation to **STOP**. A search outage halts the run as "search unavailable" instead of becoming a verdict. The one threshold changed after a real run is logged, with the reason, in `ARCHITECTURE.md`.
+
 ## Quickstart
 
 ```bash
@@ -98,7 +100,7 @@ Without Docker: `pip install -r requirements.txt`, then `python orchestrator.py 
 
 ## Cost per run
 
-About $0.00 per run: the free OpenRouter tier or a local model, plus free search. A run makes about 6–16 LLM calls, depending on how many steps it reaches and whether a step repeats: a weak idea that stops in Phase 1 or 2 uses the fewest. Each LLM entry in `decision_log.json` records the run's real `tokens` and `cost`. For a paid model, set `LLM_USD_PER_1M_TOKENS` and the cost is computed.
+About $0.00 per run: the free OpenRouter tier or a local model, plus free search. Measured on real runs with `nvidia/nemotron-3-ultra-550b-a55b:free`: a good-brief run that stopped at step 1.2 used 8,126 tokens over 12 log entries, and one that halted at step 1.1 used 2,855 tokens over 8 entries; both cost $0.00. A run makes about 6–16 LLM calls, depending on how many steps it reaches and whether a step repeats: a weak idea that stops in Phase 1 or 2 uses the fewest. Each LLM entry in `decision_log.json` records the run's real `tokens` and `cost`. For a paid model, set `LLM_USD_PER_1M_TOKENS` and the cost is computed.
 
 ## Demo video
 
