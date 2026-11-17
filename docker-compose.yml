@@ -1,0 +1,30 @@
+# One-command setup: `docker compose up`
+# - ollama: local open-weight model server (gpt-oss:20b is pulled on first use if no LLM_API_KEY is set)
+# - app: runs the six-phase pipeline on briefs/weak_idea.yaml and writes outputs/ and decision_log.json
+services:
+  ollama:
+    image: ollama/ollama:latest
+    volumes:
+      - ollama-models:/root/.ollama
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  app:
+    build: .
+    depends_on:
+      ollama:
+        condition: service_healthy
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      OLLAMA_BASE_URL: http://ollama:11434/v1
+    volumes:
+      - .:/app
+    command: ["python", "orchestrator.py", "--brief", "${BRIEF:-briefs/weak_idea.yaml}"]
+
+volumes:
+  ollama-models:
